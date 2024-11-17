@@ -1,0 +1,8 @@
+wargh is web-application to manage recursively wgetted websites.
+
+That implies a need for database to track record of archived sites, their names and files.
+For such database shall be used sqlite.
+
+But most important is admin UI, that starts and manages ongoing wget jobs.
+Output of wget process should be piped through websocket to frontend, where its rendered
+with https://github.com/xtermjs/xterm.js
