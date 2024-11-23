@@ -1,4 +1,5 @@
-CREATE TABLE test (
-    id      INTEGER PRIMARY KEY AUTOINCREMENT,
-    test    TEXT    NOT NULL UNIQUE
+CREATE TABLE user (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    login       TEXT    NOT NULL UNIQUE,
+    password    TEXT    NOT NULL
 );

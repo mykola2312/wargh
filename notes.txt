@@ -11,7 +11,7 @@ The 'index' page should display list of archives: name and follow link.
 The follow link must redirect to storage archive/, which by itself
 should be served by NGINX
 
-'login' is for admin authorization, which should create session cookie.
+'login' is for admin authorization, which should create session cookie. when no admin user exists, creates new.
 'add-existing' - form to add archive with name and already existing directory
 'wget' - creates recursive wget job
 'job' - monitor of job stdout
