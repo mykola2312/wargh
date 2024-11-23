@@ -6,3 +6,5 @@ github.com/mattn/go-sqlite3 v1.14.24 h1:tpSp2G2KyMnnQu99ngJ47EIkWVmliIizyZBfPrBW
 github.com/mattn/go-sqlite3 v1.14.24/go.mod h1:Uh1q+B4BYcTPb+yiD3kU8Ct7aC0hY9fxUwlHK0RXw+Y=
 github.com/umpc/go-sortedmap v0.0.0-20180422175548-64ab94c482f4 h1:qk1XyC6UGfPa51PGmsTQJavyhfMLScqw97pEV3sFClI=
 github.com/umpc/go-sortedmap v0.0.0-20180422175548-64ab94c482f4/go.mod h1:X6iKjXCleSyo/LZzKZ9zDF/ZB2L9gC36I5gLMf32w3M=
+golang.org/x/crypto v0.29.0 h1:L5SG1JTTXupVV3n6sUqMTeWbjAyfPwoda2DLX8J8FrQ=
+golang.org/x/crypto v0.29.0/go.mod h1:+F4F4N5hv6v38hfeYwTdx20oUvLLc+QfrE9Ax9HtgRg=
