@@ -6,3 +6,15 @@ For such database shall be used sqlite.
 But most important is admin UI, that starts and manages ongoing wget jobs.
 Output of wget process should be piped through websocket to frontend, where its rendered
 with https://github.com/xtermjs/xterm.js
+
+The 'index' page should display list of archives: name and follow link.
+The follow link must redirect to storage archive/, which by itself
+should be served by NGINX
+
+'login' is for admin authorization, which should create session cookie.
+'add-existing' - form to add archive with name and already existing directory
+'wget' - creates recursive wget job
+'job' - monitor of job stdout
+
+Jobs must live as long as spawned process', their stdout must be piped to WebSocket,
+which will be monitored by 'job' page 
