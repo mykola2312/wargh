@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/rand"
 	"database/sql"
 	"fmt"
 	"log"
@@ -8,6 +9,7 @@ import (
 	"os"
 	"strconv"
 	"text/template"
+	"time"
 	"wargh/db"
 
 	"golang.org/x/crypto/bcrypt"
@@ -16,17 +18,14 @@ import (
 var DB *sql.DB
 var templates *template.Template
 
+const COOKIE_NAME = "WARGH_SESSION"
+const COOKIE_EXPIRATION = time.Hour * 24 * 7 // 7 days
+
 type UserSession struct {
 	Id int
 }
 
-var sessions map[string]UserSession
-
-func indexHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "GET" {
-		templates.Lookup("index.html").Execute(w, nil)
-	}
-}
+var sessions map[string]UserSession = make(map[string]UserSession)
 
 const (
 	ERROR_UNKNOWN                = 0
@@ -66,6 +65,10 @@ func redirectError(w http.ResponseWriter, r *http.Request, errorCode int) {
 	http.Redirect(w, r, fmt.Sprintf("/error?error=%d", errorCode), http.StatusSeeOther)
 }
 
+func redirectIndex(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
 func isFirstUser() (bool, error) {
 	row := DB.QueryRow("SELECT COUNT(id) FROM `user`;")
 	if row.Err() != nil {
@@ -103,6 +106,55 @@ func createUser(login string, password string) (int, error) {
 	return id, nil
 }
 
+func randString(n int) string {
+	const alphanum = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	var bytes = make([]byte, n)
+	rand.Read(bytes)
+	for i, b := range bytes {
+		bytes[i] = alphanum[b%byte(len(alphanum))]
+	}
+	return string(bytes)
+}
+
+func createSession(w http.ResponseWriter, userId int) {
+	sessionStr := randString(64)
+	sessions[sessionStr] = UserSession{Id: userId}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     COOKIE_NAME,
+		Value:    sessionStr,
+		Expires:  time.Now().Add(COOKIE_EXPIRATION),
+		HttpOnly: true,
+	})
+}
+
+func checkSession(w http.ResponseWriter, r *http.Request) bool {
+	var sessionCookie *http.Cookie = nil
+	for _, cookie := range r.Cookies() {
+		if cookie.Name == COOKIE_NAME {
+			sessionCookie = cookie
+		}
+	}
+
+	if sessionCookie.Valid() != nil {
+		redirectError(w, r, ERROR_UNAUTHORIZED)
+		return false
+	}
+
+	if _, ok := sessions[sessionCookie.Value]; ok {
+		return true
+	} else {
+		redirectError(w, r, ERROR_UNAUTHORIZED)
+		return false
+	}
+}
+
+func indexHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "GET" {
+		templates.Lookup("index.html").Execute(w, nil)
+	}
+}
+
 func loginHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		templates.Lookup("login.html").Execute(w, nil)
@@ -137,7 +189,8 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 				log.Printf("created user %d\n", id)
 			}
 
-			// create session
+			createSession(w, id)
+			redirectIndex(w, r)
 		} else {
 			// try authorize
 			row := DB.QueryRow("SELECT id,password FROM `user` WHERE login = ?;", loginParam)
@@ -167,8 +220,8 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			// create session
-			log.Printf("user %d authorized!\n", id)
+			createSession(w, id)
+			redirectIndex(w, r)
 		}
 	}
 }
