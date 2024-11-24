@@ -244,7 +244,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func createJob() (string, error) {
-	cmd := exec.Command("/usr/bin/sh", "-c", "while true; do echo $(date) \"test\"")
+	cmd := exec.Command("/usr/bin/sh", "-c", "while true; do echo $(date) \"test\"; sleep 1; done")
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
