@@ -7,3 +7,5 @@ require (
 	github.com/umpc/go-sortedmap v0.0.0-20180422175548-64ab94c482f4
 	golang.org/x/crypto v0.29.0
 )
+
+require github.com/gorilla/websocket v1.5.3 // indirect

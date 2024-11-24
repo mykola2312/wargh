@@ -4,14 +4,17 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"strconv"
 	"text/template"
 	"time"
 	"wargh/db"
 
+	"github.com/gorilla/websocket"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -40,6 +43,20 @@ var ERROR_TEXT = []string{
 	"Invalid login or password",
 	"Unathorized",
 }
+
+var wsUpgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+}
+
+type Job struct {
+	Command    *exec.Cmd
+	StdoutPipe io.ReadCloser
+	StderrPipe io.ReadCloser
+	Socket     []*websocket.Conn
+}
+
+var jobs map[string]Job = make(map[string]Job)
 
 func errorHandler(w http.ResponseWriter, r *http.Request) {
 	errorParam := r.URL.Query().Get("error")
@@ -226,6 +243,50 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func createJob() (string, error) {
+	cmd := exec.Command("/usr/bin/sh", "-c", "while true; do echo $(date) \"test\"")
+
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return "", err
+	}
+
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return "", err
+	}
+
+	err = cmd.Start()
+
+	jobId := randString(64)
+	jobs[jobId] = Job{
+		Command:    cmd,
+		StdoutPipe: stdout,
+		StderrPipe: stderr,
+		Socket:     make([]*websocket.Conn, 0),
+	}
+	return jobId, err
+}
+
+func wsHandler(w http.ResponseWriter, r *http.Request) {
+	if !checkSession(w, r) {
+		return
+	}
+
+	// get job id and attach
+
+	ws, err := wsUpgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Print(err)
+
+		redirectError(w, r, ERROR_UNKNOWN)
+		return
+	}
+
+	ws.WriteMessage(websocket.TextMessage, ([]byte)("test"))
+	ws.Close()
+}
+
 func main() {
 	db.Init(&db.DBConfig{
 		DBPath:         "wargh.db",
@@ -252,6 +313,7 @@ func main() {
 	http.HandleFunc("/", indexHandler)
 	http.HandleFunc("/error", errorHandler)
 	http.HandleFunc("/login", loginHandler)
+	http.HandleFunc("/ws", wsHandler)
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
